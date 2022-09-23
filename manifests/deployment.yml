@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: truongminhquanakspractise 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: truongminhquanakspractise
+  template:
+    metadata:
+      labels:
+        app: truongminhquanakspractise 
+    spec:
+      containers:
+        - name: truongminhquanakspractise 
+          image: quantm15acr.azurecr.io/truongminhquanakspractise
+          ports:
+          - containerPort: 80
