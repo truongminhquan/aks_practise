@@ -3,7 +3,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/docker
 
 trigger:
-- main
+- none
 
 resources:
 - repo: self
@@ -16,7 +16,6 @@ variables:
   containerRegistry: 'quantm15acr.azurecr.io'
   dockerfilePath: '**/Dockerfile'
   tag: '$(Build.BuildId)'
-  imagePullSecret: 'quantm15acr2049db2a-auth'
 
   # Agent VM image name
   vmImageName: 'ubuntu-latest'
@@ -41,39 +40,12 @@ stages:
         tags: |
           $(tag)
 
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '$(System.DefaultWorkingDirectory)/kube-manifests'
+        Contents: '**'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+        OverWrite: true
+
     - upload: manifests
       artifact: manifests
-
-- stage: Deploy
-  displayName: Deploy stage
-  dependsOn: Build
-
-  jobs:
-  - deployment: Deploy
-    displayName: Deploy
-    pool:
-      vmImage: $(vmImageName)
-    environment: 'truongminhquanakspractise.default'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: KubernetesManifest@0
-            displayName: Create imagePullSecret
-            inputs:
-              action: createSecret
-              secretName: $(imagePullSecret)
-              dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
-
-          - task: KubernetesManifest@0
-            displayName: Deploy to Kubernetes cluster
-            inputs:
-              action: deploy
-              manifests: |
-                $(Pipeline.Workspace)/manifests/deployment.yml
-                $(Pipeline.Workspace)/manifests/service.yml
-              imagePullSecrets: |
-                $(imagePullSecret)
-              containers: |
-                $(containerRegistry)/$(imageRepository):$(tag)
-
